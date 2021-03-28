@@ -1,2 +1,2 @@
-# DSO_CRC_design_for_high_rate_ZTCCs
+# DSO_CRC_Design_for_High_Rate_ZTCCs
 This repo includes scripts for designing DSO CRC polynomials for high-rate ZTCCs
