@@ -107,7 +107,7 @@ end
 
 
 % Step 3: Save results
-fileName = ['error_events_v_',num2str(v),'_num_',num_string,'den_',num2str(denominator)];
+fileName = ['error_events_v_',num2str(v),'_num_',num_string,'den_',num2str(denominator),'_d_tilde_',num2str(d_tilde)];
 save([path, fileName, '.mat'], 'error_events', 'error_event_lengths', '-v7.3');
                             
                         

@@ -9,10 +9,23 @@ function [myTrellis] = Generate_trellis(v, numerators, denominator)
 %   4) nextStates
 %   5) outputs
 %
+% Format of the numerators: For (n, n-1, v) encoder, the notation is
+% consistent with [Lin and Costello, page 540]. Namely,
+%
+%   numerators = [h^(n-1)(D), ..., h^(1)(D)].
+%   denominator = h^(0)(D)
+%
+% This implies that c^(0) is the coded symbol and c^(1)(D),...,c^(n-1)(D)
+% correspond to information sequences u^(0)(D), ..., u^(n-1)(D).
+%
+% The convolutional codeword is formed according to
+%   [c^(0)_i, c^(1)_i, ..., c^(n-1)_i] at time instant i.
+% 
+%
 % Input parameters of (n, n-1, v-1) systematic conv. encoder:
 %   1) v-1: the overall constraint length
-%   2) numerators: conventional octal form of numerators in n-th column
-%   3) denominator: conventional octal form of den. in n-th column 
+%   2) numerators: octal form (Lin and Costello) of numerators in n-th column
+%   3) denominator: octal form (Lin and Costello) of den. in n-th column 
 %
 % Written by Hengjie Yang (hengjie.yang@ucla.edu)   03/28/21
 %
@@ -30,32 +43,31 @@ outputs = zeros(numStates, numInputSymbols);
 
 % Compute the 'nextStates' matrix
 
-gs = zeros(k, v);
+gs = zeros(k, v); % degree from highest to lowest? the i-th row corresponds to u^(i)(D)
 
 for iter=1:k
-    gs(iter,:) = dec2bin(base2dec(num2str(numerators(iter)), 8)) - '0';
+    gs(iter,:) = dec2bin(base2dec(num2str(numerators(n-iter)), 8)) - '0';
 end
 b = dec2bin(base2dec(num2str(denominator), 8)) - '0';
 
 
 for currentState = 0:numStates-1
-    cur_sigmas = dec2bin(currentState, v-1) - '0'; % from highest to lowest: [sigma_1, sigma_2, ..., sigma_v]
+    cur_sigmas = dec2bin(currentState, v-1) - '0'; % from highest to lowest: [sigma_v, sigma_{v-1}, ..., sigma_1]
     for input = 0:numInputSymbols-1
         us = dec2bin(input, k) - '0'; % from highest to lowest: [u_1, u_2, ..., u_k]
         us = us'; % convert to a k-by-1 vector
         total_numerator = 0;
         for ii = 1:length(us)
-            temp = gfconv(us(ii), fliplr(gs(ii, :))); % flip to lowest to highest
+            temp = gfconv(us(ii), gs(ii, :)); % flip to lowest to highest
             total_numerator = gfadd(total_numerator, temp);
         end
         total_numerator = gfadd(total_numerator, [0, cur_sigmas]);
-        [q, remd] = gfdeconv(total_numerator, fliplr(b)); % flip to lowest to highest
+        [q, remd] = gfdeconv(total_numerator, b); % flip to lowest to highest
         next_sigmas = gfadd(zeros(1, v-1), remd);
         nextState = bi2de(fliplr(next_sigmas)); % due to the feature of 'bi2de', we need an extra fliplr. 
         % nextState represented in decimal from 0 to 2^v-1;
         nextStates(currentState+1, input+1) = nextState;
-        lastbit = q;
-        nextOutput = [us', lastbit];
+        nextOutput = [q, us']; % the 1st output symbol is the coded bit
         outputs(currentState+1, input+1) = str2double(dec2base(bi2de(fliplr(nextOutput)), 8));
     end
 end
