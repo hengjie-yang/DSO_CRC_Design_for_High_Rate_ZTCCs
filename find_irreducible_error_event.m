@@ -41,7 +41,7 @@ Terminations = myTrellis.terminations;
 
 % Step 2: Viterbi search of irreducible error events
 
-MaxIteration = 100;
+MaxIteration = 200;
 Zero_state = cell(MaxIteration, 1);
 Column = cell(2, 1);
 

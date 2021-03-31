@@ -83,7 +83,14 @@ N = (K+m)/k + mu; % the overall trellis length
 % load([path, fileName, '.mat'], 'weight_node');
 % weight_spectrum = weight_node.weight_spectrum;
 % d_min = find(weight_spectrum > 0);
-d_min = 1; % minimum distance
+
+d_min = -1;
+for dist = 1:d_tilde
+    if ~isempty(error_events{dist})
+        d_min = dist;
+        break
+    end
+end
 
 
 List_size = 2^(m-1);
@@ -110,48 +117,45 @@ stopped_distance = -1;
 min_dist = -1;
 
 for dist = d_min:d_tilde
-    if ~isempty(error_events{dist})
-        weight_vec = zeros(size(locations, 1), 1);
+    weight_vec = zeros(size(locations, 1), 1);
+    % Construct single-error events
+    parfor ii = 1:size(locations, 1)
+        weight_vec(ii) = check_divisible_by_distance(error_events,...
+            error_event_lengths, Candidate_CRCs(locations(ii),:), dist, N);
+    end
 
-        % Construct single-error events
-        parfor ii = 1:size(locations, 1)
-            weight_vec(ii) = check_divisible_by_distance(error_events,...
-                error_event_lengths, Candidate_CRCs(locations(ii),:), dist, N);
+    for ii = 1:size(locations, 1)
+        Undetected_spectrum(locations(ii), dist) = weight_vec(ii);
+    end
+
+    % Construct double-error events
+    if d_tilde >= 2*d_min
+        temp = zeros(size(locations, 1), 1);
+        parfor ii=1:size(locations,1)
+            temp(ii) = check_double_error_divisible_by_distance(error_events, error_event_lengths,...
+                Candidate_CRCs(locations(ii),:), dist, d_min, d_tilde, N);
         end
 
         for ii = 1:size(locations, 1)
-            Undetected_spectrum(locations(ii), dist) = weight_vec(ii);
+            Undetected_spectrum(locations(ii), dist) = Undetected_spectrum(locations(ii), dist) + temp(ii);
         end
+    end
 
-        % Construct double-error events
-        if d_tilde >= 2*d_min
-            temp = zeros(size(locations, 1), 1);
-            parfor ii=1:size(locations,1)
-                temp(ii) = check_double_error_divisible_by_distance(error_events, error_event_lengths,...
-                    Candidate_CRCs(locations(ii),:), dist, d_min, d_tilde, N);
-            end
-
-            for ii = 1:size(locations, 1)
-                Undetected_spectrum(locations(ii), dist) = Undetected_spectrum(locations(ii), dist) + temp(ii);
-            end
-        end
-
-        min_weight = min(weight_vec);
-        locations = locations(weight_vec == min_weight);
-        disp(['    Current distance: ',num2str(dist),' number of candidates: ',...
-            num2str(size(locations,1))]);
-        if length(locations) == 1
-            crc_gen_polys = Candidate_poly_base(locations(1),:);
-            success_flag = true;
-            break
-        end 
-        if dist == d_tilde && length(locations) > 1
-            crc_gen_polys = Candidate_poly_base(locations,:);
-            stopped_distance = d_tilde;
-            disp(['    d_tilde is insufficient to find the DSO CRC... ']);
-            disp(['    Stopped distance: ',num2str(stopped_distance),...
-                ' # of candidate polynomials: ',num2str(size(crc_gen_polys,1))]);
-        end
+    min_weight = min(weight_vec);
+    locations = locations(weight_vec == min_weight);
+    disp(['    Current distance: ',num2str(dist),' number of candidates: ',...
+        num2str(size(locations,1))]);
+    if length(locations) == 1
+        crc_gen_polys = Candidate_poly_base(locations(1),:);
+        success_flag = true;
+        break
+    end 
+    if dist == d_tilde && length(locations) > 1
+        crc_gen_polys = Candidate_poly_base(locations,:);
+        stopped_distance = d_tilde;
+        disp(['    d_tilde is insufficient to find the DSO CRC... ']);
+        disp(['    Stopped distance: ',num2str(stopped_distance),...
+            ' # of candidate polynomials: ',num2str(size(crc_gen_polys,1))]);
     end
 end
 
