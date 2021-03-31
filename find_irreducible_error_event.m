@@ -6,8 +6,8 @@ function [error_events, error_event_lengths] = find_irreducible_error_event(v, n
 %
 % Inputs to specify an (n, n-1, v) systematic conv. encoder:
 %   1) v: the overall constraint length + 1
-%   2) numerators: conventional octal form of numerators in n-th column
-%   3) denominator: conventional octal form of den. in n-th column 
+%   2) numerators: conventional octal form of numerators in 1st column
+%   3) denominator: conventional octal form of den. in 1st column 
 %   
 % Written by Hengjie Yang (hengjie.yang@ucla.edu)   03/28/21
 %
@@ -55,8 +55,9 @@ for iter = 0:MaxIteration-1
                 Column{mod(iter+1, 2)+1}{next_state+1} = cell(d_tilde, 1);
             end
             weight = sum(dec2bin(oct2dec(myTrellis.outputs(1,input+1)))-'0');
+            input_binary = dec2bin(input, k) - '0';
             Column{mod(iter+1, 2)+1}{next_state+1}{weight} = ...
-                [Column{mod(iter+1, 2)+1}{next_state+1}{weight}; input];
+                [Column{mod(iter+1, 2)+1}{next_state+1}{weight}; input_binary];
         end
     else
         for cur_state = 1:numStates-1
@@ -70,7 +71,8 @@ for iter = 0:MaxIteration-1
                             end
                             weight = sum(dec2bin(oct2dec(myTrellis.outputs(cur_state+1, input+1)))-'0');
                             temp = Column{mod(iter, 2)+1}{cur_state+1}{dist};
-                            temp = [temp, input*ones(size(temp, 1), 1)];
+                            input_binary = dec2bin(input, k) - '0';
+                            temp = [temp, input_binary.*ones(size(temp, 1), 1)];
                             if dist + weight <= d_tilde
                                 Column{mod(iter+1, 2)+1}{next_state+1}{dist+weight} = ...
                                     [Column{mod(iter+1, 2)+1}{next_state+1}{dist+weight}; temp];
@@ -95,11 +97,11 @@ for iter = 1:MaxIteration
                     error_events{dist} = Zero_state{iter}{dist};
                 else
                     error_events{dist}=[error_events{dist},...
-                        zeros(size(error_events{dist},1), iter-size(error_events{dist},2))];
+                        zeros(size(error_events{dist},1), k*iter-size(error_events{dist},2))];
                     error_events{dist}=[error_events{dist};Zero_state{iter}{dist}];
                 end
                 error_event_lengths{dist}=[error_event_lengths{dist};...
-                        iter*ones(size(Zero_state{iter}{dist},1),1)];
+                        k*iter*ones(size(Zero_state{iter}{dist},1),1)];
             end
         end
     end
