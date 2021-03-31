@@ -19,7 +19,6 @@ function Poly_node = Search_DSO_CRC_poly(v, numerators, denominator, d_tilde, K,
 %   3) CRC is represented from highest to lowest degree.
 %   4) The function requires output files from
 %           find_irreducible_error_event.m
-%           Compute_ZTCC_weight_spectrum.m
 %
 %   
 %
@@ -74,17 +73,17 @@ error_event_lengths = error_event_lengths;
 mu = ceil((v-1)/k); % the length of termination stages
 N = (K+m)/k + mu; % the overall trellis length
 
-fileName = ['weight_spectrum_v_',num2str(v), '_num_', num_string,...
-    'den_', num2str(denominator),'_N_',num2str(N)];
-
-if ~exist([path, fileName, '.mat'], 'file')
-    disp(['Error: the file ',fileName, ' does not exist!']);
-    return
-end 
-load([path, fileName, '.mat'], 'weight_node');
-weight_spectrum = weight_node.weight_spectrum;
-d_min = find(weight_spectrum > 0);
-d_min = d_min(2) - 1; % minimum distance
+% fileName = ['weight_spectrum_v_',num2str(v), '_num_', num_string,...
+%     'den_', num2str(denominator),'_N_',num2str(N)];
+% 
+% if ~exist([path, fileName, '.mat'], 'file')
+%     disp(['Error: the file ',fileName, ' does not exist!']);
+%     return
+% end 
+% load([path, fileName, '.mat'], 'weight_node');
+% weight_spectrum = weight_node.weight_spectrum;
+% d_min = find(weight_spectrum > 0);
+d_min = 1; % minimum distance
 
 
 List_size = 2^(m-1);
@@ -111,46 +110,48 @@ stopped_distance = -1;
 min_dist = -1;
 
 for dist = d_min:d_tilde
-    weight_vec = zeros(size(locations, 1), 1);
-    
-    % Construct single-error events
-    parfor ii = 1:size(locations, 1)
-        weight_vec(ii) = check_divisible_by_distance(error_events,...
-            error_event_lengths, Candidate_CRCs(locations(ii),:), dist, N);
-    end
+    if ~isempty(error_events{dist})
+        weight_vec = zeros(size(locations, 1), 1);
 
-    for ii = 1:size(locations, 1)
-        Undetected_spectrum(locations(ii), dist) = weight_vec(ii);
-    end
-
-    % Construct double-error events
-    if d_tilde >= 2*d_min
-        temp = zeros(size(locations, 1), 1);
-        parfor ii=1:size(locations,1)
-            temp(ii) = check_double_error_divisible_by_distance(error_events, error_event_lengths,...
-                Candidate_CRCs(locations(ii),:), dist, d_min, d_tilde, N);
+        % Construct single-error events
+        parfor ii = 1:size(locations, 1)
+            weight_vec(ii) = check_divisible_by_distance(error_events,...
+                error_event_lengths, Candidate_CRCs(locations(ii),:), dist, N);
         end
-        
+
         for ii = 1:size(locations, 1)
-            Undetected_spectrum(locations(ii), dist) = Undetected_spectrum(locations(ii), dist) + temp(ii);
+            Undetected_spectrum(locations(ii), dist) = weight_vec(ii);
         end
-    end
 
-    min_weight = min(weight_vec);
-    locations = locations(weight_vec == min_weight);
-    disp(['    Current distance: ',num2str(dist),' number of candidates: ',...
-        num2str(size(locations,1))]);
-    if length(locations) == 1
-        crc_gen_polys = Candidate_poly_base(locations(1),:);
-        success_flag = true;
-        break
-    end 
-    if dist == d_tilde && length(locations) > 1
-        crc_gen_polys = Candidate_poly_base(locations,:);
-        stopped_distance = d_tilde;
-        disp(['    d_tilde is insufficient to find the DSO CRC... ']);
-        disp(['    Stopped distance: ',num2str(stopped_distance),...
-            ' # of candidate polynomials: ',num2str(size(crc_gen_polys,1))]);
+        % Construct double-error events
+        if d_tilde >= 2*d_min
+            temp = zeros(size(locations, 1), 1);
+            parfor ii=1:size(locations,1)
+                temp(ii) = check_double_error_divisible_by_distance(error_events, error_event_lengths,...
+                    Candidate_CRCs(locations(ii),:), dist, d_min, d_tilde, N);
+            end
+
+            for ii = 1:size(locations, 1)
+                Undetected_spectrum(locations(ii), dist) = Undetected_spectrum(locations(ii), dist) + temp(ii);
+            end
+        end
+
+        min_weight = min(weight_vec);
+        locations = locations(weight_vec == min_weight);
+        disp(['    Current distance: ',num2str(dist),' number of candidates: ',...
+            num2str(size(locations,1))]);
+        if length(locations) == 1
+            crc_gen_polys = Candidate_poly_base(locations(1),:);
+            success_flag = true;
+            break
+        end 
+        if dist == d_tilde && length(locations) > 1
+            crc_gen_polys = Candidate_poly_base(locations,:);
+            stopped_distance = d_tilde;
+            disp(['    d_tilde is insufficient to find the DSO CRC... ']);
+            disp(['    Stopped distance: ',num2str(stopped_distance),...
+                ' # of candidate polynomials: ',num2str(size(crc_gen_polys,1))]);
+        end
     end
 end
 
@@ -159,28 +160,30 @@ end
 
 
 % Identify undetected minimum distance
-for dist = d_min:d_tilde
-    num = 0;
-    if ~isempty(error_events{dist}) 
-        num = check_divisible_by_distance(error_events,...
-                error_event_lengths, crc_gen_polys(1, :), dist, N);
+if success_flag == true
+    for dist = d_min:d_tilde
+        num = 0;
+        if ~isempty(error_events{dist}) 
+            num = check_divisible_by_distance(error_events,...
+                    error_event_lengths,  Candidate_CRCs(locations(1),:), dist, N);
+        end
+
+        if dist>= 2*d_min
+            temp = check_double_error_divisible_by_distance(error_events,error_event_lengths,...
+                        Candidate_CRCs(locations(1),:), dist, d_min, d_tilde, N);
+            num = num + temp;
+        end
+
+        if num > 0
+            min_dist = dist;
+            disp(['    DSO CRC polynomial: ',num2str(crc_gen_polys(1,:))]);
+            disp(['    Minimum undetected distance: ',num2str(min_dist)]);
+            break
+        end      
     end
-    
-    if dist>= 2*d_min
-        temp = check_double_error_divisible_by_distance(error_events,error_event_lengths,...
-                    crc_gen_polys(1, :), dist, d_min, d_tilde, N);
-        num = num + temp;
-    end
-    
-    if num > 0
-        min_dist = dist;
-        disp(['    DSO CRC polynomial: ',num2str(crc_gen_polys(1,:))]);
-        disp(['    Minimum undetected distance: ',num2str(min_dist)]);
-        break
-    end      
 end
 
-    
+
 % Save results
 Poly_node.success_flag = success_flag;
 Poly_node.crc_gen_polys = crc_gen_polys;
