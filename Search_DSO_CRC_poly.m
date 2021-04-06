@@ -121,7 +121,7 @@ for dist = d_min:d_tilde
     % Construct single-error events
     parfor ii = 1:size(locations, 1)
         weight_vec(ii) = check_divisible_by_distance(error_events,...
-            error_event_lengths, Candidate_CRCs(locations(ii),:), dist, N);
+            error_event_lengths, Candidate_CRCs(locations(ii),:), dist, N, k);
     end
 
     for ii = 1:size(locations, 1)
@@ -133,7 +133,7 @@ for dist = d_min:d_tilde
         temp = zeros(size(locations, 1), 1);
         parfor ii=1:size(locations,1)
             temp(ii) = check_double_error_divisible_by_distance(error_events, error_event_lengths,...
-                Candidate_CRCs(locations(ii),:), dist, d_min, d_tilde, N);
+                Candidate_CRCs(locations(ii),:), dist, d_min, d_tilde, N, k);
         end
 
         for ii = 1:size(locations, 1)
@@ -169,12 +169,12 @@ if success_flag == true
         num = 0;
         if ~isempty(error_events{dist}) 
             num = check_divisible_by_distance(error_events,...
-                    error_event_lengths,  Candidate_CRCs(locations(1),:), dist, N);
+                    error_event_lengths,  Candidate_CRCs(locations(1),:), dist, N, k);
         end
 
         if dist>= 2*d_min
             temp = check_double_error_divisible_by_distance(error_events,error_event_lengths,...
-                        Candidate_CRCs(locations(1),:), dist, d_min, d_tilde, N);
+                        Candidate_CRCs(locations(1),:), dist, d_min, d_tilde, N, k);
             num = num + temp;
         end
 
@@ -211,7 +211,7 @@ end
 
 
 
-function undetected_weight=check_divisible_by_distance(error_event,error_event_length,test_polynomial,dist,max_length)
+function undetected_weight=check_divisible_by_distance(error_event,error_event_length,test_polynomial,dist,max_length, k)
 
 polynomial = fliplr(test_polynomial); % degree from lowest to highest
 
@@ -222,8 +222,9 @@ input = fliplr(input); % degree from lowest to highest
 for i = 1:size(input,1)
     [~,remd] = gfdeconv(input(i,:),polynomial,2);
     if remd == 0
-        if error_event_length{dist}(i) <= max_length
-            undetected_weight = undetected_weight + max_length - error_event_length{dist}(i) + 1;
+        len_1 = error_event_length{dist}(i) / k;
+        if len_1 <= max_length
+            undetected_weight = undetected_weight + max_length - len_1 + 1;
         end
     end
 end
@@ -231,7 +232,7 @@ end
 
 
 
-function undetected_error_weight=check_double_error_divisible_by_distance(error_event,error_event_length,test_polynomial,distance,d_min,d_tilde,max_length)
+function undetected_error_weight=check_double_error_divisible_by_distance(error_event,error_event_length,test_polynomial,distance,d_min,d_tilde,max_length, k)
 
 polynomial = fliplr(test_polynomial); %degree from lowest to highest
 
@@ -244,10 +245,10 @@ for d1 = d_min:d_tilde
                 for j = 1:size(error_event{d2},1)
                     input_1 = fliplr(error_event{d1}(i,:));
                     input_2 = fliplr(error_event{d2}(j,:));%degree from lowest to highest
-                    len_1 = error_event_length{d1}(i);
-                    len_2 = error_event_length{d2}(j);
+                    len_1 = error_event_length{d1}(i) / k;
+                    len_2 = error_event_length{d2}(j) / k;
                     for g1 = 0:max_length-len_1-len_2
-                        double_error_event = [input_2(1:end), zeros(1,g1), input_1(1:end)];
+                        double_error_event = [input_2(1:end), zeros(1,k*g1), input_1(1:end)];
                         [~,remd] = gfdeconv(double_error_event, polynomial, 2);
                         if remd == 0
                             undetected_error_weight = undetected_error_weight+...

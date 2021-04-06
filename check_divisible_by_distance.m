@@ -1,4 +1,4 @@
-function undetected_weight=check_divisible_by_distance(error_event,error_event_length,test_polynomial,d,max_length)
+function undetected_weight=check_divisible_by_distance(error_event,error_event_length,test_polynomial,d,max_length, k)
 
 %
 %   Inputs:
@@ -6,6 +6,7 @@ function undetected_weight=check_divisible_by_distance(error_event,error_event_l
 %       2) test_polynomial: the polynomial to be tested (in binary from highest to lowest degree)
 %       3) d: the specific distance at which we are testing
 %       4) max_length: overall trellis length
+%       5) k: number of input rails
 %
 %   Outputs:
 %       1) undetected_weight: a scalar indicating the number of
@@ -23,8 +24,9 @@ input = fliplr(input); % degree from lowest to highest
 for i = 1:size(input,1)
     [~,remd] = gfdeconv(input(i,:),polynomial,2);
     if remd == 0 
-        if error_event_length{d}(i) <= max_length
-            undetected_weight = undetected_weight + max_length - error_event_length{d}(i) + 1;
+        len_1 = error_event_length{d}(i) / k;
+        if len_1 <= max_length
+            undetected_weight = undetected_weight + max_length - len_1 + 1;
         end
     end
 end
