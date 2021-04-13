@@ -9,8 +9,20 @@ function [myTrellis, Terminations, Dual_terminations] = Generate_trellis(v, nume
 %   4) nextStates: a numStates-by-numInputSymbols matrix;
 %   5) outputs: a numStates-by-numInputSymbols matrix; each entry is in
 %           octal.
-%   6) Terminations: a numStates-by-numTermination matrix; each entry is in
-%           octal.
+%
+%
+% Input parameters of (n, n-1, v-1) systematic conv. encoder:
+%   1) v-1: the overall constraint length
+%   2) numerators: octal form (Lin and Costello) of numerators in n-th column
+%   3) denominator: octal form (Lin and Costello) of den. in n-th column
+%
+% Output parameters:
+%   1) myTrellis: a struct with fields same as output of 'poly2trellis'.
+%   2) Terminations: a numState-by-numTermination matrix indicating the
+%       sequential input termination symbols in octal.
+%   3) Dual_terminations: a numState-by-numTermination matrix indicating the
+%       sequential output termination symbols in octal.
+%
 %
 % References:
 %   [1] S. Lin and D. J. Costello, "Error control coding", Pearson Education,
@@ -32,18 +44,6 @@ function [myTrellis, Terminations, Dual_terminations] = Generate_trellis(v, nume
 % The convolutional codeword is formed according to
 %   [c^(0)_i, c^(1)_i, ..., c^(n-1)_i] at time instant i.
 % 
-%
-% Input parameters of (n, n-1, v-1) systematic conv. encoder:
-%   1) v-1: the overall constraint length
-%   2) numerators: octal form (Lin and Costello) of numerators in n-th column
-%   3) denominator: octal form (Lin and Costello) of den. in n-th column
-%
-% Output parameters:
-%   1) myTrellis: a struct with fields same as output of 'poly2trellis'.
-%   2) Terminations: a numState-by-numTermination matrix indicating the
-%       sequential input termination symbols in octal.
-%   3) Dual_terminations: a numState-by-numTermination matrix indicating the
-%       sequential output termination symbols in octal.
 %
 % Written by Hengjie Yang (hengjie.yang@ucla.edu)   03/28/21
 %

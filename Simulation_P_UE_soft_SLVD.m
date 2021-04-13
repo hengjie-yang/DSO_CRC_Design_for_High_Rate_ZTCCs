@@ -33,14 +33,21 @@ if ~exist([path, fileName, '.mat'], 'file')
     disp('File ',fileName, ' does not exist!');
     return
 end
-load([path, fileName, '.mat'], 'myTrellis', 'Terminations');
+load([path, fileName, '.mat'], 'myTrellis', 'Terminations', 'Dual_terminations');
 
+fileName = ['Dual_trellis_v_',num2str(v), '_num_', num_string, 'den_', num2str(denominator)];
+
+if ~exist([path, fileName, '.mat'], 'file')
+    disp('File ',fileName, ' does not exist!');
+    return
+end
+load([path, fileName, '.mat'], 'dual_trellis');
 
 
 % System parameters
 K = 6; % information length
 m = 6; % CRC degree
-snr_dBs = [1:0.5:3];
+snr_dBs = 1;
 crc_gen_poly = '6F'; % degree from highest to lowest
 poly = dec2base(base2dec(crc_gen_poly, 16), 2) - '0';
 poly = fliplr(poly); % degree from lowest to highest
@@ -91,7 +98,7 @@ for iter = 1:size(DistTable, 1)
 end
 
 
-parfor iter = 1:size(snr_dBs, 2)
+for iter = 1:size(snr_dBs, 2)
     snr = 10^(snr_dBs(iter)/10);
     
     num_UE = 0;
@@ -100,6 +107,7 @@ parfor iter = 1:size(snr_dBs, 2)
     while num_UE < 10 || num_trial < 1e4
         num_trial = num_trial + 1;
         info_sequence = randi([0 1], 1, K);
+%         info_sequence = ones(1, K);
         
         % add CRC behind the message
         msg_temp = fliplr(info_sequence); % degree from low to high
@@ -128,10 +136,16 @@ parfor iter = 1:size(snr_dBs, 2)
         rxSig = awgn(txSig, snr_dBs(iter), 'measured');
         
         % brute-force soft SLVD
-        [check_flag, correct_flag, path_rank] = ...
-                SLVD_brute_force(rxSig, high_rate_codewords, Psi, crc_coded_sequence, poly);
+%         [check_flag, correct_flag, path_rank] = ...
+%                 SLVD_brute_force(rxSig, high_rate_codewords, Psi, crc_coded_sequence, poly);
+%         disp(['Brute-force: SNR (dB): ', num2str(snr_dBs(iter)), ' # trials: ',num2str(num_trial),...
+%             ' # errors: ', num2str(num_UE), ' check: ',num2str(check_flag)...
+%             ' correct: ',num2str(correct_flag), ' list_rank: ', num2str(path_rank)]);
+        
+        [check_flag, correct_flag, path_rank, ~] = ...
+            SLVD_dual_trellis(dual_trellis, Dual_terminations, rxSig, poly, crc_coded_sequence, Psi);
             
-        disp(['SNR (dB): ', num2str(snr_dBs(iter)), ' # trials: ',num2str(num_trial),...
+        disp(['Dual trellis: SNR (dB): ', num2str(snr_dBs(iter)), ' # trials: ',num2str(num_trial),...
             ' # errors: ', num2str(num_UE), ' check: ',num2str(check_flag)...
             ' correct: ',num2str(correct_flag), ' list_rank: ', num2str(path_rank)]);
         
