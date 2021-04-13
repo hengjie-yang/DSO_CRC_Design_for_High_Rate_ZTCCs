@@ -1,5 +1,7 @@
-% This script is to simulate the performance of the high-rate ZTCC decoded
-% with the serial list Viterbi decoding on dual trellis.
+% This script is to compare the performance of the high-rate ZTCC decoded
+% with brute-force serial list Viterbi decoding (i.e., ML decoding) and decoded
+% with the SLVD on dual trellis. The goal is to have a baseline result that 
+% can be used to check the correctness of the SLVD on dual trellis.
 %
 % The output DistTable has the following format: for 1<=i<= Psi
 %      1) (i, 1) denotes # total instances at list rank 'i'.
@@ -45,14 +47,44 @@ load([path, fileName, '.mat'], 'dual_trellis');
 % System parameters
 K = 6; % information length
 m = 6; % CRC degree
-snr_dBs = 1:3;
+snr_dBs = 1;
 crc_gen_poly = '6F'; % degree from highest to lowest
 poly = dec2base(base2dec(crc_gen_poly, 16), 2) - '0';
 poly = fliplr(poly); % degree from lowest to highest
-Psi = 1e5; % maximum list size
-numTermination = size(Terminations, 2);
 
 P_UE = zeros(1, length(snr_dBs));
+
+
+% Step 1: Generate all high-rate codewords for brute-force list decoding
+K_high = K + m; % the information length of the high-rate code
+num_codewords = 2^(K_high);
+Psi = min(num_codewords, 1e5); % maximum list size
+temp = 0:num_codewords-1;
+numTermination = size(Terminations, 2);
+N = (K_high + numTermination*k)/k*(k+1); % the blocklength
+
+info_sequences = dec2bin(temp) - '0';
+high_rate_codewords = zeros(num_codewords, N);
+
+for iter = 1:size(info_sequences, 1)
+    info_sequence = info_sequences(iter, :);
+    
+    % add termination
+    [~, last_state] = convenc(info_sequence, myTrellis);  
+    for ii = 1:numTermination
+        termination_bits = Terminations(last_state+1, ii);
+        termination_bits = dec2bin(oct2dec(termination_bits), k) - '0';
+        info_sequence = [info_sequence, termination_bits];
+    end
+    
+    [codeword, fstate] = convenc(info_sequence, myTrellis);
+    if fstate ~= 0
+        error('ERROR: Incorrect termination!');
+    end
+    high_rate_codewords(iter, :) = codeword;
+end
+disp('Step 1 completed');
+
 
 
 % Step 2: Simulation part
@@ -66,7 +98,7 @@ for iter = 1:size(DistTable, 1)
 end
 
 
-parfor iter = 1:size(snr_dBs, 2)
+for iter = 1:size(snr_dBs, 2)
     snr = 10^(snr_dBs(iter)/10);
     
     num_UE = 0;
@@ -103,10 +135,19 @@ parfor iter = 1:size(snr_dBs, 2)
         % Send txSig over the AWGN channel
         rxSig = awgn(txSig, snr_dBs(iter), 'measured');
         
-        % SLVD on dual trellis
+        % brute-force soft SLVD
+%         [check_flag, correct_flag, path_rank] = ...
+%                 SLVD_brute_force(rxSig, high_rate_codewords, Psi, crc_coded_sequence, poly);
+%         disp(['Brute-force: SNR (dB): ', num2str(snr_dBs(iter)), ' # trials: ',num2str(num_trial),...
+%             ' # errors: ', num2str(num_UE), ' check: ',num2str(check_flag)...
+%             ' correct: ',num2str(correct_flag), ' list_rank: ', num2str(path_rank)]);
+        
         [check_flag, correct_flag, path_rank, ~] = ...
             SLVD_dual_trellis(dual_trellis, Dual_terminations, rxSig, poly, crc_coded_sequence, Psi);
             
+        disp(['Dual trellis: SNR (dB): ', num2str(snr_dBs(iter)), ' # trials: ',num2str(num_trial),...
+            ' # errors: ', num2str(num_UE), ' check: ',num2str(check_flag)...
+            ' correct: ',num2str(correct_flag), ' list_rank: ', num2str(path_rank)]);
         
         % keep record of the result
         if check_flag == 0
@@ -124,11 +165,7 @@ parfor iter = 1:size(snr_dBs, 2)
             DistTable{iter}(path_rank, 1) = DistTable{iter}(path_rank, 1) + 1;
         else
             DistTable{iter}(Psi+1, 1) = DistTable{iter}(Psi+1, 1) + 1;
-        end 
-        
-        disp(['Dual trellis: SNR (dB): ', num2str(snr_dBs(iter)), ' # trials: ',num2str(num_trial),...
-            ' # errors: ', num2str(num_UE), ' check: ',num2str(check_flag)...
-            ' correct: ',num2str(correct_flag), ' list_rank: ', num2str(path_rank)]);
+        end  
     end
 end
 
