@@ -45,7 +45,7 @@ load([path, fileName, '.mat'], 'dual_trellis');
 % System parameters
 K = 6; % information length
 m = 6; % CRC degree
-snr_dBs = 1:3;
+snr_dBs = 1:0.5:3;
 crc_gen_poly = '6F'; % degree from highest to lowest
 poly = dec2base(base2dec(crc_gen_poly, 16), 2) - '0';
 poly = fliplr(poly); % degree from lowest to highest
@@ -126,7 +126,7 @@ parfor iter = 1:size(snr_dBs, 2)
             DistTable{iter}(Psi+1, 1) = DistTable{iter}(Psi+1, 1) + 1;
         end 
         
-        disp(['Dual trellis: SNR (dB): ', num2str(snr_dBs(iter)), ' # trials: ',num2str(num_trial),...
+        disp(['SNR (dB): ', num2str(snr_dBs(iter)), ' # trials: ',num2str(num_trial),...
             ' # errors: ', num2str(num_UE), ' check: ',num2str(check_flag)...
             ' correct: ',num2str(correct_flag), ' list_rank: ', num2str(path_rank)]);
     end
