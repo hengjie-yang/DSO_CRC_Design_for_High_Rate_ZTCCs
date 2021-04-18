@@ -129,18 +129,23 @@ end
 
 function spec = Compute_low_rate_spectra(crc_poly, info_sequences, codewords)
 
-% crc_poly: from highest to lowest degree
-% info_sequence: index 1 corresponds to the first bit entering the conv.
+% Input parameters:
+%   1) crc_poly: from highest to lowest degree
+%   2) info_sequence: index 1 corresponds to the first bit entering the conv.
 %       encoder
+%   3) k: the # input rails
+%   4) numTermination: the # termination transitions
+%
 %
 
 poly = fliplr(crc_poly); % degree from lowest to highest
 N = length(codewords(1, :));
 spec = zeros(1, N+1);
 
-for iter = 1:size(info_sequences)
+for iter = 1:size(info_sequences, 1)
     info_seq = info_sequences(iter, :);
-    [~, remd] = gfdeconv(fliplr(info_seq), poly);
+    temp = fliplr(info_seq); % degree from lowest to highest
+    [~, remd] = gfdeconv(temp, poly);
     if any(remd) == 0
         weight = sum(codewords(iter, :), 2);
         spec(weight+1) = spec(weight+1) + 1;

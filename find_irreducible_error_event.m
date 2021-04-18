@@ -34,8 +34,7 @@ load([path, fileName, '.mat'], 'myTrellis');
 
 numStates = myTrellis.numStates;
 numInputSymbols = myTrellis.numInputSymbols;
-numOutputSymbols = myTrellis.numOutputSymbols;
-Terminations = myTrellis.terminations;
+
 
 
 
@@ -57,7 +56,7 @@ for iter = 0:MaxIteration-1
             weight = sum(dec2bin(oct2dec(myTrellis.outputs(1,input+1)))-'0');
             input_binary = dec2bin(input, k) - '0';
             Column{mod(iter+1, 2)+1}{next_state+1}{weight} = ...
-                [Column{mod(iter+1, 2)+1}{next_state+1}{weight}; input_binary];
+                [Column{mod(iter+1, 2)+1}{next_state+1}{weight}; input_binary]; % the 'd' in Column{iter}{state}{d} is true distance
         end
     else
         for cur_state = 1:numStates-1

@@ -235,7 +235,7 @@ function [decoded_input_seq, next_GMD_value, next_path_ids] = trace_back_search(
 % Output parameters:
 %   1) decoded_input_seq: the input sequence associated with the 'id'-th
 %       most likely path.
-%   2) GMD: the global merge difference (GMD) between the 'id'-th path and 1st
+%   2) next_GMD_value: the global merge difference (GMD) between the next path and 1st
 %       most likely path. This evalue is simply the metric difference
 %       between these two paths.
 %   3) next_path_ids: the sequence of indices representing the ranks of 
@@ -293,8 +293,7 @@ LMDs(min_depth:end) = Inf; % invalidate the impossible segment, since the values
 Detour_array = [Detour_array; LMDs];
 
 next_GMD_value = min(min(Detour_array)); % determine the next GMD value
-% CAUTION: we also need to invalidate the value at which no divering point
-% exists.
+
 
 if next_GMD_value == Inf % did not find the valid next GMD value
     next_path_ids = -1;
@@ -355,31 +354,4 @@ end
 
 end
             
-                        
-                        
-            
-                
-                
-                
-        
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
