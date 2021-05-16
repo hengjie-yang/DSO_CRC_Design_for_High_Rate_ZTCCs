@@ -43,13 +43,13 @@ load([path, fileName, '.mat'], 'dual_trellis');
 
 
 % System parameters
-K = 6; % information length
-m = 6; % CRC degree
-snr_dBs = 1:0.5:3;
-crc_gen_poly = '6F'; % degree from highest to lowest
+K = 144; % information length
+m = 12; % CRC degree
+snr_dBs = [4,4.5];
+crc_gen_poly = '135D'; % degree from highest to lowest
 poly = dec2base(base2dec(crc_gen_poly, 16), 2) - '0';
 poly = fliplr(poly); % degree from lowest to highest
-Psi = 1e5; % maximum list size
+Psi = 1e6; % maximum list size
 numTermination = size(Terminations, 2);
 
 P_UE = zeros(1, length(snr_dBs));
@@ -72,7 +72,7 @@ parfor iter = 1:size(snr_dBs, 2)
     num_UE = 0;
     num_NACK = 0;
     num_trial = 0;
-    while num_UE < 10 || num_trial < 1e4
+    while num_UE < 100 || num_trial < 5e4
         num_trial = num_trial + 1;
         info_sequence = randi([0 1], 1, K);
 %         info_sequence = ones(1, K);
