@@ -150,7 +150,7 @@ else
 end
 
 fileName = ['ZTP_node_v_',num2str(v), '_num_', num_string,'den_',...
-    num2str(denominator),'_N_',num2str(N)];
+    num2str(denominator), '_d_',num2str(d_tilde),'_N_',num2str(N)];
 save([path, fileName],'ZTP_node','-v7.3');
 
 

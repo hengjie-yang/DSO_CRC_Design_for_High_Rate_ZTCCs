@@ -10,7 +10,7 @@ set(groot, 'defaultAxesTickLabelInterpreter','latex');
 set(groot, 'defaultLegendInterpreter','latex');
 
 
-gamma_s = 1:0.1:4;  % the definition aligns with the journal manuscript
+gamma_s = 1:0.1:5;  % the definition aligns with the journal manuscript
 
 % % CRC-ZTCC setup
 % k = 64;
@@ -26,8 +26,8 @@ k = 3;
 n = 4;
 v = 6;
 mu = ceil(v/k);
-K = 9;
-m = 6;
+K = 144;
+m = 12;
 N = (K+m+k*mu)/k*n;
 R = K / N;
 
@@ -61,10 +61,10 @@ semilogy(gamma_s, rcu_bounds, '-'); hold on
 semilogy(gamma_s, mc_bounds, '-');hold on
 % xline(2.5, '--k');
 grid on
-ylim([10^-8, 1]);
+ylim([10^-7, 1]);
 legend('RCU bound','MC bound');
 xlabel('$\gamma_s$ (dB)', 'interpreter','latex');
 ylabel('Probability of error');
-title('K = 30, N = 64, R = 30/64');
+title('K = 144, N = 216, R = 2/3');
 
 
