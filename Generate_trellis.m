@@ -34,7 +34,7 @@ function [myTrellis, Terminations, Dual_terminations] = Generate_trellis(v, nume
 %   numerators = [h^(n-1)(D), ..., h^(1)(D)].
 %   denominator = h^(0)(D)
 %
-% Format of the state index: Let [s_{v-2}, s_{v-1}, ..., s_0] represents
+% Format of the state index: Let [s_{v-1}, s_{v-2}, ..., s_0] represents
 %   the state vector in the observer canonical form of H(D). Then its
 %   decimal representation plus one is the state index in MATLAB.
 %
